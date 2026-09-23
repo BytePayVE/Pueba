@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BYTEPAY VE - Panel Maestro</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+    <header>
+        <div class="header-brand">
+            <div class="header-logo">BP</div>
+            <span style="font-weight: 900; font-size: 16px;">BYTEPAY VE - MAESTRO</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="app-container">
+            <div id="view-admin" class="view active">
+                <h1>Panel Administrativo Maestro</h1>
+                <p class="subtitle">Gestión global de contratos, tiendas aliadas y pagos.</p>
+
+                <div class="admin-tabs">
+                    <button class="tab-btn active" onclick="cambiarTabAdmin('tab-contratos', this)">Nuevo Contrato</button>
+                    <button class="tab-btn" onclick="cambiarTabAdmin('tab-alianzas', this)">Empresas Aliadas</button>
+                    <button class="tab-btn" onclick="cambiarTabAdmin('tab-verificacion', this)">Verificar Pagos</button>
+                    <button class="tab-btn" onclick="cambiarTabAdmin('tab-gestion', this)">Listado Global</button>
+                </div>
+
+                <div id="tab-contratos" class="admin-section active">
+                    <div class="form-group"><label>Nro. de Contrato</label><input type="text" id="admContrato"></div>
+                    <div class="form-group"><label>Cédula del Titular *</label><input type="text" id="admCedulaTitular"></div>
+                    <div class="form-group"><label>Nombre del Titular *</label><input type="text" id="admTitular"></div>
+                    <div class="form-group"><label>Teléfono *</label><input type="text" id="admTelefono"></div>
+                    <div class="form-group"><label>URL Foto Perfil</label><input type="text" id="admFoto"></div>
+                    <div class="form-group">
+                        <label>Tienda Aliada Asociada</label>
+                        <select id="admAsociarAlianza"><option value="Directo BytePay">Directo BytePay</option></select>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); padding: 14px; border-radius: 12px; margin-bottom: 14px;">
+                        <label style="color: var(--primary); margin-bottom: 10px;">📦 Agregar Producto & Plazos</label>
+                        <div class="form-group"><label>Artículo</label><input type="text" id="admArticulo"></div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <div style="flex:1;"><label>Costo Base ($)</label><input type="number" id="admCostoBase" oninput="calcularAdmin()"></div>
+                            <div style="flex:1;"><label>Recargo ($)</label><input type="number" id="admRecargo" oninput="calcularAdmin()"></div>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <div style="flex:1;">
+                                <label>% Inicial</label>
+                                <select id="admPorcentaje" onchange="calcularAdmin()">
+                                    <option value="30">30%</option>
+                                    <option value="40" selected>40%</option>
+                                    <option value="50">50%</option>
+                                </select>
+                            </div>
+                            <div style="flex:1;"><label>Cuotas</label><input type="number" id="admCuotas" value="4" oninput="calcularAdmin()"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Periodicidad</label>
+                            <select id="admPeriodicidad">
+                                <option value="semanal">Semanal</option>
+                                <option value="quincenal">Quincenal</option>
+                                <option value="mensual" selected>Mensual</option>
+                            </select>
+                        </div>
+                        <div style="font-size: 12px; color: var(--text-muted);">
+                            Total: <b style="color:#fff;" id="admResTotal">$0.00</b> | Inicial: <b style="color:#fff;" id="admResInicial">$0.00</b> | Cuota: <b style="color:#fff;" id="admResCuota">$0.00</b>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="guardarEnFirebase()">Crear Contrato</button>
+                </div>
+
+                <div id="tab-alianzas" class="admin-section" style="display:none;">
+                    <div class="form-group"><label>Nombre de la Tienda</label><input type="text" id="alianzaNombre"></div>
+                    <div class="form-group"><label>RIF (Usuario)</label><input type="text" id="alianzaRif"></div>
+                    <div class="form-group"><label>Teléfono</label><input type="text" id="alianzaTelefono"></div>
+                    <div class="form-group"><label>Contraseña</label><input type="password" id="alianzaPassword"></div>
+                    <div class="form-group">
+                        <label>Estatus</label>
+                        <select id="alianzaEstadoPlan">
+                            <option value="activo">Activo</option>
+                            <option value="pendiente">Pendiente</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="guardarAlianza()">Guardar Empresa Aliada</button>
+                </div>
+
+                <div id="tab-verificacion" class="admin-section" style="display:none;">
+                    <div class="form-group"><label>Número de Contrato</label><input type="text" id="verifContratoId"></div>
+                    <div class="form-group"><label>Número de Cuota a Aprobar</label><input type="text" id="verifNumCuota"></div>
+                    <button class="btn btn-primary" onclick="aprobarCuotaAdmin()">Aprobar Cuota</button>
+                </div>
+
+                <div id="tab-gestion" class="admin-section" style="display:none;">
+                    <div id="listaAdminGeneral" style="max-height: 280px; overflow-y: auto; margin-bottom: 12px;"></div>
+                    <button class="btn btn-secondary" onclick="cargarListadosAdmin()">Actualizar Listado</button>
+                </div>
+
+                <button class="btn btn-secondary" style="margin-top: 16px;" onclick="window.location.href='index.html'">Cerrar Sesión Maestro</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Script intacto del maestro -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({
+            apiKey: "AIzaSyBboWF2cTQdWgjaSxqQb3BMPJCKFs0ftEM",
+            authDomain: "jotech-contratos.firebaseapp.com",
+            projectId: "jotech-contratos",
+            storageBucket: "jotech-contratos.firebasestorage.app",
+            messagingSenderId: "109219790720",
+            appId: "1:109219790720:web:b9d410cc0725e3eebf0b65"
+        }));
+
+        async function cargarSelectoresAlianzas() {
+            const snap = await getDocs(collection(db, "alianzas"));
+            let optionsHtml = '<option value="Directo BytePay">Directo BytePay</option>';
+            snap.forEach(docSnap => {
+                const data = docSnap.data();
+                optionsHtml += `<option value="${data.nombre} (RIF: ${data.rif})">${data.nombre} - RIF: ${data.rif}</option>`;
+            });
+            document.getElementById('admAsociarAlianza').innerHTML = optionsHtml;
+        }
+        cargarSelectoresAlianzas();
+        cargarListadosAdmin();
+
+        window.guardarAlianza = async function() {
+            const nombre = document.getElementById('alianzaNombre').value.trim();
+            const rif = document.getElementById('alianzaRif').value.trim();
+            const telefono = document.getElementById('alianzaTelefono').value.trim();
+            const password = document.getElementById('alianzaPassword').value.trim();
+            const estadoPlan = document.getElementById('alianzaEstadoPlan').value;
+
+            if (!nombre || !rif) { alert("Complete los campos."); return; }
+            await setDoc(doc(db, "alianzas", rif), { nombre, rif, telefono, password, estadoPlan });
+            alert("Empresa aliada guardada.");
+            cargarSelectoresAlianzas();
+            cargarListadosAdmin();
+        };
+
+        window.guardarEnFirebase = async function() {
+            const contratoId = document.getElementById('admContrato').value.trim();
+            const cedula = document.getElementById('admCedulaTitular').value.trim();
+            const titular = document.getElementById('admTitular').value.trim();
+            const telefono = document.getElementById('admTelefono').value.trim();
+            const articulo = document.getElementById('admArticulo').value.trim();
+            const costoBase = parseFloat(document.getElementById('admCostoBase').value) || 0;
+            const recargo = parseFloat(document.getElementById('admRecargo').value) || 0;
+            const porcentaje = parseInt(document.getElementById('admPorcentaje').value);
+            const numCuotas = parseInt(document.getElementById('admCuotas').value);
+            const periodicidad = document.getElementById('admPeriodicidad').value;
+
+            if (!contratoId || !cedula || !titular || !articulo) { alert("Complete los campos obligatorios."); return; }
+
+            await setDoc(doc(db, "clientes", contratoId), { numeroContrato: contratoId, cedula, nombreTitular: titular, telefono, foto: document.getElementById('admFoto').value });
+
+            const costoTotal = costoBase + recargo;
+            const valorInicial = (costoTotal * porcentaje) / 100;
+            const cuotaMensual = numCuotas > 0 ? ((costoTotal - valorInicial) / numCuotas) : 0;
+
+            await setDoc(doc(collection(db, "articulos")), {
+                contratoId, nombreArticulo: articulo, costoBase, recargo, costoTotal,
+                porcentajeInicial: porcentaje, valorInicial, totalCuotas: numCuotas,
+                cuotaValor: cuotaMensual, periodicidad, alianzaAsociada: document.getElementById('admAsociarAlianza').value,
+                cuotasPagadas: ["inicial"], creadoEn: new Date().toISOString()
+            });
+
+            alert("Contrato creado exitosamente.");
+            cargarListadosAdmin();
+        };
+
+        window.aprobarCuotaAdmin = async function() {
+            const contratoId = document.getElementById('verifContratoId').value.trim();
+            const cuotaNum = document.getElementById('verifNumCuota').value.trim();
+            const snapArt = await getDocs(query(collection(db, "articulos"), where("contratoId", "==", contratoId)));
+            
+            for (const docSnap of snapArt.docs) {
+                let cp = docSnap.data().cuotasPagadas || [];
+                if (!cp.includes(cuotaNum)) {
+                    cp.push(cuotaNum);
+                    await setDoc(docSnap.ref, { cuotasPagadas: cp }, { merge: true });
+                }
+            }
+            alert(`Cuota #${cuotaNum} aprobada con éxito.`);
+            cargarListadosAdmin();
+        };
+
+        window.cargarListadosAdmin = async function() {
+            const container = document.getElementById('listaAdminGeneral');
+            const snapClientes = await getDocs(collection(db, "clientes"));
+            let html = '<b style="font-size:11px; color:var(--text-muted);">CONTRATOS REGISTRADOS:</b>';
+            snapClientes.forEach(docSnap => {
+                const c = docSnap.data();
+                html += `<div class="admin-list-item">Contrato #${c.numeroContrato} - ${c.nombreTitular} <button class="btn btn-secondary" style="width:auto; padding:2px 6px; background:var(--danger); color:#fff; margin:0;" onclick="eliminarCliente('${c.numeroContrato}')">Eliminar</button></div>`;
+            });
+            container.innerHTML = html;
+        };
+
+        window.eliminarCliente = async function(id) {
+            if(confirm("¿Seguro que desea eliminar?")) {
+                await deleteDoc(doc(db, "clientes", id));
+                cargarListadosAdmin();
+            }
+        };
+    </script>
+    <script>
+        function cambiarTabAdmin(idTab, btn) {
+            document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(idTab).style.display = 'block';
+            btn.classList.add('active');
+        }
+        function calcularAdmin() {
+            const cb = parseFloat(document.getElementById('admCostoBase').value) || 0;
+            const rec = parseFloat(document.getElementById('admRecargo').value) || 0;
+            const porc = parseInt(document.getElementById('admPorcentaje').value) || 40;
+            const cuotas = parseInt(document.getElementById('admCuotas').value) || 4;
+            const total = cb + rec;
+            const inicial = (total * porc) / 100;
+            const cuota = cuotas > 0 ? ((total - inicial) / cuotas) : 0;
+            document.getElementById('admResTotal').innerText = `$${total.toFixed(2)}`;
+            document.getElementById('admResInicial').innerText = `$${inicial.toFixed(2)}`;
+            document.getElementById('admResCuota').innerText = `$${cuota.toFixed(2)} USD`;
+        }
+    </script>
+</body>
+</html>

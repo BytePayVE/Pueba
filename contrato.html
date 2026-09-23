@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BYTEPAY VE - Panel de Contrato</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-brand">
+            <button class="menu-btn" onclick="toggleSidebar()" style="display: block;">☰</button>
+            <div class="header-logo">BP</div>
+            <span style="font-weight: 900; font-size: 16px;">BYTEPAY VE</span>
+        </div>
+    </header>
+
+    <div id="sidebarOverlay" class="overlay" onclick="toggleSidebar()"></div>
+    <div id="clientSidebar" class="sidebar">
+        <div class="sidebar-header">
+            <span style="font-weight: bold; font-size: 14px;" id="sidebarUserName">Menú Cliente</span>
+            <button onclick="toggleSidebar()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a onclick="navegarVista('view-cliente-dashboard'); toggleSidebar();">🏠 Inicio & Mis Productos</a></li>
+            <li><a onclick="navegarVista('view-perfil'); toggleSidebar();">👤 Mi Perfil y Ajustes</a></li>
+            <li><a onclick="navegarVista('view-catalogo'); toggleSidebar();">📦 Catálogo General</a></li>
+            <li><a onclick="navegarVista('view-faq'); toggleSidebar();">❓ Preguntas Frecuentes</a></li>
+            <li><a onclick="navegarVista('view-reportar-pago'); toggleSidebar();">💳 Reportar Pago de Cuota</a></li>
+            <li style="margin-top: 40px;"><a href="index.html" style="color: var(--danger);">🚪 Cerrar Sesión</a></li>
+        </ul>
+    </div>
+
+    <main>
+        <div class="app-container">
+            <!-- Dashboard Principal del Cliente -->
+            <div id="view-cliente-dashboard" class="view active">
+                <div class="client-welcome-banner">
+                    <div class="client-avatar-badge" id="bannerAvatar">👤</div>
+                    <div class="client-welcome-info">
+                        <h2 id="lblSaludoCliente">¡Hola!</h2>
+                        <p>Estado actual de tus productos, cuotas y fechas límites de corte.</p>
+                        <div class="contract-badge-pill" id="lblSubCliente">Contrato #---</div>
+                    </div>
+                </div>
+
+                <div id="listaArticulosCliente"></div>
+
+                <div class="info-card" style="background: rgba(34, 197, 94, 0.05); border-color: rgba(34, 197, 94, 0.2); color: #4ade80; margin-top: 12px;">
+                    🧮 Equivalente total al cambio actual (<span id="lblTasaDisplayHome">0.00</span> VES): <strong id="lblTotalBolivares">0.00 VES</strong>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 12px;">
+                    <button class="btn btn-primary" style="flex:1;" onclick="navegarVista('view-reportar-pago')">💳 Reportar Pago</button>
+                    <button class="btn btn-secondary" style="flex:1;" onclick="descargarReciboPDFReal()">📥 Descargar Recibo</button>
+                </div>
+            </div>
+
+            <!-- Perfil -->
+            <div id="view-perfil" class="view" style="display:none;">
+                <h1>Perfil y Ajustes</h1>
+                <p class="subtitle">Gestiona tu información personal y fotografía.</p>
+                <div class="form-group"><label>Cédula de Identidad</label><input type="text" id="perfilCedula"></div>
+                <div class="form-group"><label>Nombre del Titular</label><input type="text" id="perfilNombre"></div>
+                <div class="form-group"><label>Contrato Activo</label><input type="text" id="perfilContrato" readonly style="opacity: 0.7;"></div>
+                <div class="form-group"><label>URL de Fotografía de Perfil</label><input type="text" id="perfilFoto"></div>
+                <button class="btn btn-primary" onclick="guardarPerfilCliente()">Guardar Cambios</button>
+                <button class="btn btn-secondary" style="margin-top: 8px;" onclick="navegarVista('view-cliente-dashboard')">Volver</button>
+            </div>
+
+            <!-- Catálogo -->
+            <div id="view-catalogo" class="view" style="display:none;">
+                <h1>Catálogo de Productos</h1>
+                <p class="subtitle">Línea de artículos disponibles.</p>
+                <div class="article-item"><b>🧊 Nevera Ejecutiva Dúplex</b></div>
+                <div class="article-item"><b>📱 Smartphone Gama Media Pro</b></div>
+                <button class="btn btn-secondary" style="margin-top: 16px;" onclick="navegarVista('view-cliente-dashboard')">Volver</button>
+            </div>
+
+            <!-- FAQ -->
+            <div id="view-faq" class="view" style="display:none;">
+                <h1>Preguntas Frecuentes</h1>
+                <p class="subtitle">Respuestas sobre pagos y modalidades.</p>
+                <div class="faq-card" onclick="toggleFaq(this)">
+                    <div class="faq-question">¿Cómo funcionan los plazos y la inicial? ▼</div>
+                    <div class="faq-answer">La cuota inicial se registra automáticamente como pagada al aperturarse el contrato.</div>
+                </div>
+                <button class="btn btn-secondary" style="margin-top: 16px;" onclick="navegarVista('view-cliente-dashboard')">Volver</button>
+            </div>
+
+            <!-- Reportar Pago -->
+            <div id="view-reportar-pago" class="view" style="display:none;">
+                <h1>Reportar Pago de Cuota</h1>
+                <p class="subtitle">Ingrese los datos de su transferencia o pago móvil.</p>
+                <div class="form-group"><label>Número de Contrato *</label><input type="text" id="repContrato"></div>
+                <div class="form-group"><label>Tipo de Cuota *</label><input type="text" id="repNumCuota" placeholder="Ej. Cuota #1"></div>
+                <div style="display: flex; gap: 10px;">
+                    <div class="form-group" style="flex:1;"><label>Monto Pagado ($ USD) *</label><input type="number" id="repMontoUsd" oninput="calcularMontoBsReporte()"></div>
+                    <div class="form-group" style="flex:1;"><label>Tasa Oficial</label><input type="text" id="repTasaDia" readonly style="color:var(--primary);"></div>
+                </div>
+                <div class="form-group" style="background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2); padding: 12px; border-radius: 12px;">
+                    <label style="color: var(--success);">Equivalente en Bolívares</label>
+                    <div style="font-size: 16px; font-weight: 800; color: #fff;" id="lblMontoCalculadoBs">0.00 VES</div>
+                </div>
+                <div class="form-group"><label>Banco Emisor *</label><input type="text" id="repBancoEmisor" placeholder="Banesco / Mercantil"></div>
+                <div class="form-group"><label>Teléfono Emisor *</label><input type="text" id="repTelefono"></div>
+                <div class="form-group"><label>Cédula *</label><input type="text" id="repCedula"></div>
+                <div class="form-group"><label>6 Últimos Dígitos Referencia *</label><input type="text" id="repReferencia" maxlength="6"></div>
+                <div class="form-group"><label>📎 Adjuntar Capture *</label><input type="file" id="repFileCapture" accept="image/*"></div>
+                <button class="btn btn-whatsapp" onclick="enviarReporteWhatsApp()">📤 Enviar a WhatsApp</button>
+                <button class="btn btn-secondary" style="margin-top: 8px;" onclick="navegarVista('view-cliente-dashboard')">Volver</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toastFeedback">¡Acción realizada con éxito!</div>
+
+    <!-- Script intacto del cliente -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({
+            apiKey: "AIzaSyBboWF2cTQdWgjaSxqQb3BMPJCKFs0ftEM",
+            authDomain: "jotech-contratos.firebaseapp.com",
+            projectId: "jotech-contratos",
+            storageBucket: "jotech-contratos.firebasestorage.app",
+            messagingSenderId: "109219790720",
+            appId: "1:109219790720:web:b9d410cc0725e3eebf0b65"
+        }));
+
+        window.tasaBcvActual = 36.50;
+        window.clienteActualGlobal = { id: '', nombre: '', cedula: '', telefono: '', foto: '', articulos: [] };
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const contratoId = urlParams.get('id');
+
+        async function inicializarContratoCliente() {
+            if (!contratoId) { window.location.href = "index.html"; return; }
+            try {
+                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
+                const data = await res.json();
+                if (data && data.promedio) window.tasaBcvActual = data.promedio;
+
+                const clienteDoc = await getDoc(doc(db, "clientes", contratoId));
+                if (!clienteDoc.exists()) { alert("Contrato no encontrado."); window.location.href = "index.html"; return; }
+                const clienteData = clienteDoc.data();
+
+                const snapArt = await getDocs(query(collection(db, "articulos"), where("contratoId", "==", contratoId)));
+                let articulosTemp = [];
+                snapArt.forEach(docSnap => articulosTemp.push(docSnap.data()));
+
+                window.clienteActualGlobal = {
+                    id: contratoId,
+                    nombre: clienteData.nombreTitular || "Cliente",
+                    cedula: clienteData.cedula || "",
+                    telefono: clienteData.telefono || "",
+                    foto: clienteData.foto || "",
+                    articulos: articulosTemp
+                };
+
+                document.getElementById('lblSaludoCliente').innerText = `¡Hola, ${window.clienteActualGlobal.nombre}!`;
+                document.getElementById('lblSubCliente').innerText = `CONTRATO #${contratoId}`;
+                document.getElementById('sidebarUserName').innerText = window.clienteActualGlobal.nombre;
+                document.getElementById('perfilNombre').value = window.clienteActualGlobal.nombre;
+                document.getElementById('perfilCedula').value = window.clienteActualGlobal.cedula;
+                document.getElementById('perfilContrato').value = contratoId;
+                document.getElementById('perfilFoto').value = window.clienteActualGlobal.foto;
+
+                if (window.clienteActualGlobal.foto) {
+                    document.getElementById('bannerAvatar').innerHTML = `<img src="${window.clienteActualGlobal.foto}">`;
+                }
+
+                let contenedorArt = document.getElementById('listaArticulosCliente');
+                let sumaTotalBs = 0;
+                let htmlArts = '<h3 style="font-size: 14px; margin-bottom: 10px;">📦 Productos & Cuotas</h3>';
+
+                articulosTemp.forEach((art, index) => {
+                    sumaTotalBs += art.costoTotal * window.tasaBcvActual;
+                    let cuotasHtml = `<div class="cuota-row" style="background: rgba(34, 197, 94, 0.08);"><span><b>Cuota Inicial (${art.porcentajeInicial}%)</b> - $${art.valorInicial.toFixed(2)}</span><span class="badge-status badge-pagado">PAGADO</span></div>`;
+                    
+                    for(let i = 1; i <= (art.totalCuotas || 4); i++) {
+                        const pagado = (art.cuotasPagadas || []).includes(i.toString()) || (art.cuotasPagadas || []).includes(i);
+                        cuotasHtml += `<div class="cuota-row"><span>Cuota #${i} ($${art.cuotaValor.toFixed(2)})</span><span class="badge-status ${pagado ? 'badge-pagado' : 'badge-pendiente'}">${pagado ? 'PAGADO' : 'PENDIENTE'}</span></div>`;
+                    }
+
+                    htmlArts += `<div class="accordion-header" onclick="toggleAccordion('prod-${index}')"><span>📦 ${art.nombreArticulo}</span><span>▼</span></div><div id="prod-${index}" class="accordion-body"><div style="border: 1px solid var(--border); border-radius: 10px;">${cuotasHtml}</div></div>`;
+                });
+
+                contenedorArt.innerHTML = htmlArts;
+                document.getElementById('lblTotalBolivares').innerText = `${sumaTotalBs.toLocaleString('es-VE', {minimumFractionDigits: 2})} VES`;
+                document.getElementById('lblTasaDisplayHome').innerText = window.tasaBcvActual.toFixed(2);
+                document.getElementById('repContrato').value = contratoId;
+                document.getElementById('repCedula').value = window.clienteActualGlobal.cedula;
+                document.getElementById('repTelefono').value = window.clienteActualGlobal.telefono;
+                document.getElementById('repTasaDia').value = window.tasaBcvActual.toFixed(2) + " VES/USD";
+            } catch (e) { alert("Error cargando contrato: " + e.message); }
+        }
+        inicializarContratoCliente();
+
+        window.guardarPerfilCliente = async function() {
+            await setDoc(doc(db, "clientes", contratoId), {
+                cedula: document.getElementById('perfilCedula').value,
+                nombreTitular: document.getElementById('perfilNombre').value,
+                foto: document.getElementById('perfilFoto').value
+            }, { merge: true });
+            alert("Perfil actualizado con éxito");
+            location.reload();
+        };
+
+        window.descargarReciboPDFReal = function() {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+            pdf.text(`Comprobante Contrato #${contratoId} - ${window.clienteActualGlobal.nombre}`, 14, 20);
+            pdf.save(`Contrato_${contratoId}.pdf`);
+        };
+    </script>
+    <script>
+        function navegarVista(idVista) {
+            document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+            document.getElementById(idVista).style.display = 'flex';
+        }
+        function toggleSidebar() { document.getElementById('clientSidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('active'); }
+        function toggleAccordion(id) { document.getElementById(id).classList.toggle('open'); }
+        function toggleFaq(card) { card.classList.toggle('open'); }
+        function calcularMontoBsReporte() {
+            const usd = parseFloat(document.getElementById('repMontoUsd').value) || 0;
+            document.getElementById('lblMontoCalculadoBs').innerText = (usd * window.tasaBcvActual).toLocaleString('es-VE', {minimumFractionDigits: 2}) + " VES";
+        }
+        function enviarReporteWhatsApp() {
+            const contrato = document.getElementById('repContrato').value;
+            const msg = `Reporte de pago Contrato #${contrato} - Monto: $${document.getElementById('repMontoUsd').value}`;
+            window.open(`https://api.whatsapp.com/send?phone=584121234567&text=${encodeURIComponent(msg)}`, '_blank');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BYTEPAY VE - Panel de Comercio</title>
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+    <header>
+        <div class="header-brand">
+            <div class="header-logo">BP</div>
+            <span style="font-weight: 900; font-size: 16px;">BYTEPAY VE - ALIANZA</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="app-container">
+            <div id="view-admin-alianza" class="view active">
+                <h1>Panel de Tienda Aliada</h1>
+                <p class="subtitle">Gestión exclusiva de sus productos y contratos asociados.</p>
+
+                <div class="info-card" style="background: rgba(56, 189, 248, 0.05); border-color: rgba(56, 189, 248, 0.2); margin-bottom: 16px;">
+                    🏪 Empresa Aliada: <strong id="lblNombreTiendaAliada" style="color:#fff;">---</strong><br>
+                    📌 Estatus en Plan: <span id="lblEstadoPlanAliado" style="color:var(--success);">Activo</span>
+                </div>
+
+                <div class="admin-tabs" style="margin-bottom: 14px;">
+                    <button class="tab-btn active" onclick="cambiarTabAliado('tab-aliado-productos', this)">Agregar Producto</button>
+                    <button class="tab-btn" onclick="cambiarTabAliado('tab-aliado-ventas', this)">Mis Ventas</button>
+                </div>
+
+                <div id="tab-aliado-productos" class="admin-section active">
+                    <div class="form-group"><label>Número de Contrato Existente *</label><input type="text" id="aliadoContratoId"></div>
+                    <div class="form-group"><label>Nombre del Producto</label><input type="text" id="aliadoArticulo"></div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="flex:1;"><label>Costo Base ($)</label><input type="number" id="aliadoCostoBase" oninput="calcularAliadoForm()"></div>
+                        <div style="flex:1;"><label>Margen / Recargo ($)</label><input type="number" id="aliadoRecargo" oninput="calcularAliadoForm()"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="flex:1;">
+                            <label>% Inicial</label>
+                            <select id="aliadoPorcentaje" onchange="calcularAliadoForm()">
+                                <option value="30">30%</option>
+                                <option value="40" selected>40%</option>
+                                <option value="50">50%</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;"><label>Cuotas</label><input type="number" id="aliadoCuotas" value="4" oninput="calcularAliadoForm()"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>Periodicidad</label>
+                        <select id="aliadoPeriodicidad">
+                            <option value="semanal">Semanal</option>
+                            <option value="quincenal">Quincenal</option>
+                            <option value="mensual" selected>Mensual</option>
+                        </select>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
+                        Total: <b style="color:#fff;" id="aliadoResTotal">$0.00</b> | Inicial: <b style="color:#fff;" id="aliadoResInicial">$0.00</b> | Cuota: <b style="color:#fff;" id="aliadoResCuota">$0.00</b>
+                    </div>
+                    <button class="btn btn-primary" onclick="guardarProductoTiendaAliadaAsociado()">Asignar Producto</button>
+                </div>
+
+                <div id="tab-aliado-ventas" class="admin-section" style="display:none;">
+                    <h3 style="font-size: 13px; margin-bottom: 10px;">Contratos Referidos</h3>
+                    <div id="listaVentasAlianza" style="max-height: 250px; overflow-y: auto;"></div>
+                </div>
+
+                <button class="btn btn-secondary" style="margin-top: 16px;" onclick="window.location.href='index.html'">Cerrar Sesión</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Script intacto de la tienda aliada -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const db = getFirestore(initializeApp({
+            apiKey: "AIzaSyBboWF2cTQdWgjaSxqQb3BMPJCKFs0ftEM",
+            authDomain: "jotech-contratos.firebaseapp.com",
+            projectId: "jotech-contratos",
+            storageBucket: "jotech-contratos.firebasestorage.app",
+            messagingSenderId: "109219790720",
+            appId: "1:109219790720:web:b9d410cc0725e3eebf0b65"
+        }));
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const rifUser = urlParams.get('rif');
+        window.sesionAlianzaActual = { nombre: '', rif: rifUser };
+
+        async function initAlianza() {
+            if (!rifUser) { window.location.href = "index.html"; return; }
+            const docSnap = await getDoc(doc(db, "alianzas", rifUser));
+            if(docSnap.exists()) {
+                const data = docSnap.data();
+                window.sesionAlianzaActual.nombre = data.nombre;
+                document.getElementById('lblNombreTiendaAliada').innerText = `${data.nombre} (RIF: ${data.rif})`;
+                document.getElementById('lblEstadoPlanAliado').innerText = data.estadoPlan === 'pendiente' ? 'Pendiente' : 'Activo';
+                cargarVentasAlianza(data.nombre);
+            }
+        }
+        initAlianza();
+
+        window.guardarProductoTiendaAliadaAsociado = async function() {
+            const contratoId = document.getElementById('aliadoContratoId').value.trim();
+            const articulo = document.getElementById('aliadoArticulo').value.trim();
+            const costoBase = parseFloat(document.getElementById('aliadoCostoBase').value) || 0;
+            const recargo = parseFloat(document.getElementById('aliadoRecargo').value) || 0;
+            const porcentaje = parseInt(document.getElementById('aliadoPorcentaje').value);
+            const numCuotas = parseInt(document.getElementById('aliadoCuotas').value);
+            const periodicidad = document.getElementById('aliadoPeriodicidad').value;
+
+            if (!contratoId || !articulo || costoBase <= 0) { alert("Complete los campos obligatorios."); return; }
+
+            const clienteDoc = await getDoc(doc(db, "clientes", contratoId));
+            if (!clienteDoc.exists()) { alert(`El contrato #${contratoId} no existe.`); return; }
+
+            const costoTotal = costoBase + recargo;
+            const valorInicial = (costoTotal * porcentaje) / 100;
+            const cuotaValor = numCuotas > 0 ? ((costoTotal - valorInicial) / numCuotas) : 0;
+
+            const articuloRef = doc(collection(db, "articulos"));
+            await setDoc(articuloRef, {
+                contratoId, nombreArticulo: articulo, costoBase, recargo, costoTotal,
+                porcentajeInicial: porcentaje, valorInicial, totalCuotas: numCuotas,
+                cuotaValor, periodicidad, alianzaAsociada: `${window.sesionAlianzaActual.nombre} (RIF: ${rifUser})`,
+                cuotasPagadas: ["inicial"], creadoEn: new Date().toISOString()
+            });
+
+            alert("¡Producto asignado con éxito!");
+            location.reload();
+        };
+
+        async function cargarVentasAlianza(nombreTienda) {
+            const container = document.getElementById('listaVentasAlianza');
+            const snapArt = await getDocs(query(collection(db, "articulos")));
+            let html = '';
+            snapArt.forEach(docSnap => {
+                const art = docSnap.data();
+                if (art.alianzaAsociada && art.alianzaAsociada.includes(nombreTienda)) {
+                    html += `<div class="admin-list-item">Contrato #${art.contratoId} - ${art.nombreArticulo} ($${art.costoTotal.toFixed(2)})</div>`;
+                }
+            });
+            container.innerHTML = html || 'No hay ventas asociadas.';
+        }
+    </script>
+    <script>
+        function cambiarTabAliado(idTab, btn) {
+            document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(idTab).style.display = 'block';
+            btn.classList.add('active');
+        }
+        function calcularAliadoForm() {
+            const cb = parseFloat(document.getElementById('aliadoCostoBase').value) || 0;
+            const rec = parseFloat(document.getElementById('aliadoRecargo').value) || 0;
+            const porc = parseInt(document.getElementById('aliadoPorcentaje').value) || 40;
+            const cuotas = parseInt(document.getElementById('aliadoCuotas').value) || 4;
+            const total = cb + rec;
+            const inicial = (total * porc) / 100;
+            const cuota = cuotas > 0 ? ((total - inicial) / cuotas) : 0;
+            document.getElementById('aliadoResTotal').innerText = `$${total.toFixed(2)}`;
+            document.getElementById('aliadoResInicial').innerText = `$${inicial.toFixed(2)}`;
+            document.getElementById('aliadoResCuota').innerText = `$${cuota.toFixed(2)} USD`;
+        }
+    </script>
+</body>
+</html>
