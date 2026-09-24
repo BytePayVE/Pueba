@@ -3,81 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BYTEPAY VE - Mi Contrato</title>
+    <title>BYTEPAY VE - Aliado</title>
     <link rel="stylesheet" href="styles.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-    <header>
-        <div class="header-brand">
-            <button class="menu-btn" onclick="toggleSidebar()" style="display: block;">☰</button>
-            <div class="header-logo">BP</div>
-            <span style="font-weight: 900; font-size: 16px;">BYTEPAY VE</span>
-        </div>
-    </header>
-
-    <div id="sidebarOverlay" class="overlay" onclick="toggleSidebar()"></div>
-    <div id="clientSidebar" class="sidebar">
-        <div class="sidebar-header"><span id="sidebarUserName">Cliente</span><button onclick="toggleSidebar()" style="background:none; border:none; color:#fff; font-size:18px;">✕</button></div>
-        <ul class="sidebar-menu">
-            <li><a onclick="nav('view-dashboard')">🏠 Inicio & Mis Productos</a></li>
-            <li><a onclick="nav('view-perfil')">👤 Mi Perfil</a></li>
-            <li><a onclick="nav('view-reportar')">💳 Reportar Pago</a></li>
-            <li style="margin-top: 40px;"><a href="index.html" style="color: var(--danger);">🚪 Cerrar Sesión</a></li>
-        </ul>
-    </div>
-
+    <header><div class="header-brand"><div class="header-logo">BP</div><span style="font-weight: 900;">ALIANZA</span></div></header>
     <main>
         <div class="app-container">
-            <!-- DASHBOARD -->
-            <div id="view-dashboard" class="view active">
-                <div class="client-welcome-banner">
-                    <div class="client-avatar-badge" id="bannerAvatar">👤</div>
-                    <div class="client-welcome-info">
-                        <h2 id="lblSaludo">Cargando...</h2>
-                        <div class="contract-badge-pill" id="lblSubCliente">Contrato #---</div>
-                    </div>
+            <div class="view active">
+                <h1 id="lblAliNombre">Tienda Aliada</h1>
+                <div class="admin-tabs">
+                    <button class="tab-btn active" onclick="tab('tab-vender', this)">Vender Producto</button>
+                    <button class="tab-btn" onclick="tab('tab-ventas', this)">Mis Ventas</button>
                 </div>
-                <div id="listaArticulos"></div>
-                <div class="info-card" style="background: rgba(34, 197, 94, 0.05); color: #4ade80;">
-                    🧮 Total Deuda BCV (<span id="lblTasa">0.00</span> VES): <strong id="lblTotalBs">0.00 VES</strong>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-primary" style="flex:1;" onclick="nav('view-reportar')">💳 Reportar Pago</button>
-                </div>
-            </div>
 
-            <!-- PERFIL -->
-            <div id="view-perfil" class="view">
-                <h1>Perfil</h1>
-                <div class="form-group"><label>Cédula</label><input type="text" id="perfilCedula"></div>
-                <div class="form-group"><label>Nombre</label><input type="text" id="perfilNombre"></div>
-                <button class="btn btn-primary" onclick="guardarPerfil()">Guardar Cambios</button>
-            </div>
+                <div id="tab-vender" class="admin-section active">
+                    <div class="form-group"><label>Nro. Contrato Cliente</label><input type="text" id="vContrato"></div>
+                    <div class="form-group"><label>Artículo</label><input type="text" id="vArt"></div>
+                    <div class="form-group"><label>Costo ($)</label><input type="number" id="vCosto"></div>
+                    <button class="btn btn-primary" onclick="vender()">Asignar Venta</button>
+                </div>
 
-            <!-- REPORTAR PAGO -->
-            <div id="view-reportar" class="view">
-                <h1>Reportar Pago</h1>
-                <div class="form-group"><label>Contrato *</label><input type="text" id="repContrato" readonly></div>
-                <div class="form-group"><label>Tipo de Cuota *</label><input type="text" id="repNumCuota" placeholder="Ej. Cuota #1"></div>
-                <div style="display: flex; gap: 10px;">
-                    <div class="form-group" style="flex:1;"><label>Monto Pagado ($) *</label><input type="number" id="repMonto" oninput="calcularMontoBs()"></div>
-                    <div class="form-group" style="flex:1;"><label>Tasa Oficial BCV</label><input type="text" id="repTasa" readonly></div>
-                </div>
-                <div class="form-group" style="background: rgba(34,197,94,0.05); border: 1px solid rgba(34,197,94,0.2); padding: 12px; border-radius: 12px;">
-                    <label style="color: var(--success);">Calculado en Bolívares</label>
-                    <div style="font-size: 16px; font-weight: 800;" id="lblMontoCalcBs">0.00 VES</div>
-                </div>
-                <div class="form-group"><label>Banco *</label><input type="text" id="repBanco"></div>
-                <div class="form-group"><label>Ref (6 dígitos) *</label><input type="text" id="repRef" maxlength="6"></div>
-                <button class="btn btn-whatsapp" onclick="enviarWhatsApp()">📤 Enviar a WhatsApp</button>
+                <div id="tab-ventas" class="admin-section"><div id="listaVentas" style="max-height:300px; overflow-y:auto;"></div></div>
+                <button class="btn btn-secondary" onclick="window.location.href='index.html'">Cerrar Sesión</button>
             </div>
         </div>
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const db = getFirestore(initializeApp({
             apiKey: "AIzaSyBboWF2cTQdWgjaSxqQb3BMPJCKFs0ftEM", authDomain: "jotech-contratos.firebaseapp.com",
@@ -85,84 +40,38 @@
             messagingSenderId: "109219790720", appId: "1:109219790720:web:b9d410cc0725e3eebf0b65"
         }));
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const contratoId = urlParams.get('id');
-        window.tasaBcvActual = 36.50;
+        const rif = new URLSearchParams(window.location.search).get('rif');
+        let nombreAliado = "";
 
-        async function initApp() {
-            if (!contratoId) { window.location.href = "index.html"; return; }
-            
-            try {
-                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
-                const data = await res.json();
-                if (data && data.promedio) window.tasaBcvActual = data.promedio;
-            } catch (e) { console.warn("Tasa BCV local."); }
+        async function init() {
+            if(!rif) window.location.href = 'index.html';
+            const docAli = await getDoc(doc(db, "alianzas", rif));
+            if(!docAli.exists()) window.location.href = 'index.html';
+            nombreAliado = docAli.data().nombre;
+            document.getElementById('lblAliNombre').innerText = nombreAliado;
 
-            const docSnap = await getDoc(doc(db, "clientes", contratoId));
-            if (!docSnap.exists()) { window.location.href = "index.html"; return; }
-            const cliente = docSnap.data();
-
-            document.getElementById('lblSaludo').innerText = `¡Hola, ${cliente.nombreTitular}!`;
-            document.getElementById('lblSubCliente').innerText = `CONTRATO #${contratoId}`;
-            document.getElementById('sidebarUserName').innerText = cliente.nombreTitular;
-            
-            document.getElementById('perfilCedula').value = cliente.cedula;
-            document.getElementById('perfilNombre').value = cliente.nombreTitular;
-            document.getElementById('repContrato').value = contratoId;
-            document.getElementById('repTasa').value = window.tasaBcvActual.toFixed(2) + " VES/USD";
-            document.getElementById('lblTasa').innerText = window.tasaBcvActual.toFixed(2);
-
-            const q = query(collection(db, "articulos"), where("contratoId", "==", contratoId));
-            const artSnap = await getDocs(q);
-            
-            let html = '<h3 style="font-size:14px; margin-bottom:10px;">📦 Productos & Cuotas</h3>';
-            let totalBs = 0;
-
-            artSnap.forEach((docA) => {
-                const art = docA.data();
-                totalBs += art.costoTotal * window.tasaBcvActual;
-                html += `<div class="accordion-header"><span>📦 ${art.nombreArticulo} ($${art.costoTotal})</span></div>
-                         <div style="border: 1px solid var(--border); padding: 10px; margin-bottom:10px;">
-                             <div class="cuota-row"><span style="color:var(--success)">Inicial: $${art.valorInicial.toFixed(2)}</span><b>PAGADO</b></div>`;
-                for(let i=1; i<=art.totalCuotas; i++) {
-                    const pagado = (art.cuotasPagadas || []).includes(i.toString());
-                    html += `<div class="cuota-row"><span>Cuota #${i}: $${art.cuotaValor.toFixed(2)}</span><b style="color:${pagado?'var(--success)':'var(--danger)'}">${pagado?'PAGADO':'PENDIENTE'}</b></div>`;
-                }
-                html += `</div>`;
-            });
-            document.getElementById('listaArticulos').innerHTML = html;
-            document.getElementById('lblTotalBs').innerText = totalBs.toLocaleString('es-VE') + " VES";
+            const q = query(collection(db, "articulos"));
+            const arts = await getDocs(q);
+            let h = '';
+            arts.forEach(a => { if(a.data().alianzaAsociada && a.data().alianzaAsociada.includes(nombreAliado)) h += `<div class="admin-list-item">Contrato #${a.data().contratoId} - ${a.data().nombreArticulo} ($${a.data().costoTotal})</div>`; });
+            document.getElementById('listaVentas').innerHTML = h || 'Sin ventas.';
         }
-        initApp();
+        init();
 
-        window.guardarPerfil = async function() {
-            await setDoc(doc(db, "clientes", contratoId), {
-                cedula: document.getElementById('perfilCedula').value,
-                nombreTitular: document.getElementById('perfilNombre').value
-            }, { merge: true });
-            alert("Perfil guardado.");
-        };
-
-        window.calcularMontoBs = function() {
-            const usd = parseFloat(document.getElementById('repMonto').value) || 0;
-            document.getElementById('lblMontoCalcBs').innerText = (usd * window.tasaBcvActual).toLocaleString('es-VE', {minimumFractionDigits: 2}) + " VES";
-        };
-
-        window.enviarWhatsApp = function() {
-            const numCuota = document.getElementById('repNumCuota').value;
-            const usd = document.getElementById('repMonto').value;
-            const bs = (usd * window.tasaBcvActual).toLocaleString('es-VE');
-            const banco = document.getElementById('repBanco').value;
-            const ref = document.getElementById('repRef').value;
-            if(!usd || !ref || ref.length !== 6) { alert("Complete datos y referencia de 6 dígitos"); return; }
+        window.vender = async function() {
+            const idC = document.getElementById('vContrato').value;
+            const cb = parseFloat(document.getElementById('vCosto').value);
+            if(!idC || !cb) { alert("Faltan datos"); return; }
             
-            const msj = `*REPORTE PAGO*\nContrato: #${contratoId}\nCuota: ${numCuota}\nMonto: $${usd} (${bs} VES)\nBanco: ${banco}\nRef: ${ref}`;
-            window.open(`https://api.whatsapp.com/send?phone=584121234567&text=${encodeURIComponent(msj)}`, '_blank');
+            const docC = await getDoc(doc(db, "clientes", idC));
+            if(!docC.exists()) { alert("Contrato no existe en BD"); return; }
+
+            await setDoc(doc(collection(db, "articulos")), { contratoId: idC, nombreArticulo: document.getElementById('vArt').value, costoTotal: cb, valorInicial: (cb*0.4), totalCuotas: 4, cuotaValor: ((cb-(cb*0.4))/4), alianzaAsociada: nombreAliado, cuotasPagadas: ["inicial"] });
+            alert("Venta registrada!"); init();
         };
     </script>
     <script>
-        function nav(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).classList.add('active'); toggleSidebar(); }
-        function toggleSidebar() { document.getElementById('clientSidebar').classList.toggle('open'); document.getElementById('sidebarOverlay').classList.toggle('active'); }
+        function tab(id, btn) { document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(id).classList.add('active'); btn.classList.add('active'); }
     </script>
 </body>
 </html>
