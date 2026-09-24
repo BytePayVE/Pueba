@@ -3,50 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BYTEPAY VE - Inicio</title>
-    <link rel="stylesheet" href="css/estilos.css">
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0b0f19">
+    <title>BYTEPAY VE - Login</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header>
         <div class="header-brand">
             <div class="header-logo">BP</div>
-            <span style="font-weight: 900; font-size: 16px; letter-spacing: -0.5px;">BYTEPAY VE</span>
-        </div>
-        <div class="header-actions">
-            <button class="icon-btn" onclick="toggleNotifications()" title="Notificaciones">
-                ⚠️ <span class="badge-dot" id="notifDot" style="display:none;"></span>
-            </button>
+            <span style="font-weight: 900; font-size: 16px;">BYTEPAY VE</span>
         </div>
     </header>
 
-    <div id="notificationsPanel" class="notifications-panel">
-        <div style="font-weight: bold; font-size: 13px; margin-bottom: 10px; display: flex; justify-content: space-between;">
-            <span>Centro de Avisos & Automatización</span>
-            <span style="font-size: 10px; color: var(--primary); cursor: pointer;" onclick="marcarLeidas()">Limpiar</span>
-        </div>
-        <div id="listaNotificaciones"><div class="notif-item">🎉 Sistema de automatización de cortes activo. Inicial pre-pagada.</div></div>
-    </div>
-
     <main>
         <div class="app-container">
-            <!-- Pantalla de Login / Contrato -->
             <div id="view-home" class="view active">
                 <h1>Iniciar sesión</h1>
                 <p class="subtitle">Ingrese su número de contrato o credenciales de acceso</p>
 
                 <div class="form-group">
-                    <label>Número de Contrato o RUT</label>
+                    <label>Número de Contrato (Cliente)</label>
                     <input type="text" id="inputContrato" placeholder="Ej. N33">
                 </div>
-                <button class="btn btn-primary" onclick="iniciarSesionConAnimacion('cliente')">Entrar como Cliente</button>
+                <button class="btn btn-primary" onclick="iniciarSesion('cliente')">Entrar como Cliente</button>
                 
                 <div style="width:100%; height:1px; background:var(--border); margin:20px 0;"></div>
                 
                 <div class="form-group">
                     <label>Tipo de Panel Administrativo</label>
-                    <select id="selectTipoAdmin" onchange="cambiarModoAdminLogin()" style="margin-bottom: 10px;">
+                    <select id="selectTipoAdmin" onchange="cambiarModoLogin()">
                         <option value="maestro">Enterprise Maestro</option>
                         <option value="alianza">Tienda Aliada</option>
                     </select>
@@ -58,30 +42,24 @@
                 </div>
 
                 <div id="divLoginAlianza" class="form-group" style="display: none;">
-                    <label>Usuario / RIF de Tienda Aliada</label>
-                    <input type="text" id="inputAlianzaRifUser" placeholder="Ej. J-12345678-9" style="margin-bottom: 10px;">
-                    <label>Contraseña de la Tienda Aliada</label>
-                    <input type="password" id="inputAlianzaPass" placeholder="••••••••">
+                    <label>RIF Tienda Aliada</label>
+                    <input type="text" id="inputAlianzaRifUser" style="margin-bottom: 10px;">
+                    <label>Contraseña Tienda</label>
+                    <input type="password" id="inputAlianzaPass">
                 </div>
 
-                <button class="btn btn-secondary" onclick="iniciarSesionConAnimacion('admin')">Ingresar al Panel</button>
+                <button class="btn btn-secondary" onclick="iniciarSesion('admin')">Ingresar al Panel</button>
             </div>
 
-            <!-- Loader dinámico -->
-            <div id="view-loader" class="view" style="display:none;">
-                <div class="spinner" id="loaderSpinner"></div>
-                <div class="loader-check" id="loaderCheck">✓</div>
-                <h2 id="loaderText" style="font-size: 16px; font-weight: 700; margin-top: 12px;">Cargando</h2>
+            <div id="view-loader" class="view" style="align-items:center; display:none; padding: 50px 0;">
+                <h2 style="font-size: 16px; font-weight: 700;">Conectando a la Base de Datos...</h2>
             </div>
         </div>
     </main>
 
-    <div id="toastFeedback">¡Acción realizada con éxito!</div>
-
-    <!-- Script intacto con la lógica de Firebase y APIs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBboWF2cTQdWgjaSxqQb3BMPJCKFs0ftEM",
@@ -94,83 +72,50 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        window.tasaBcvActual = 36.50;
-
-        async function obtenerTasaBCV() {
-            try {
-                const res = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
-                const data = await res.json();
-                if (data && data.promedio) window.tasaBcvActual = data.promedio;
-            } catch (e) { window.tasaBcvActual = 36.50; }
-        }
-        obtenerTasaBCV();
-
-        window.cambiarModoAdminLogin = function() {
+        window.cambiarModoLogin = function() {
             const modo = document.getElementById('selectTipoAdmin').value;
-            if(modo === 'maestro') {
-                document.getElementById('divLoginMaestro').style.display = 'block';
-                document.getElementById('divLoginAlianza').style.display = 'none';
-            } else {
-                document.getElementById('divLoginMaestro').style.display = 'none';
-                document.getElementById('divLoginAlianza').style.display = 'block';
-            }
+            document.getElementById('divLoginMaestro').style.display = modo === 'maestro' ? 'block' : 'none';
+            document.getElementById('divLoginAlianza').style.display = modo === 'alianza' ? 'block' : 'none';
         }
 
-        window.iniciarSesionConAnimacion = async function(tipo) {
-            if (tipo === 'cliente') {
-                const contratoId = document.getElementById('inputContrato').value.trim();
-                if (!contratoId) { alert("Ingrese número de contrato."); return; }
-                
-                document.getElementById('view-home').style.display = 'none';
-                document.getElementById('view-loader').style.display = 'flex';
-                document.getElementById('loaderText').innerText = "Sincronizando y Verificando Plazos";
+        window.iniciarSesion = async function(tipo) {
+            document.getElementById('view-home').style.display = 'none';
+            document.getElementById('view-loader').style.display = 'flex';
 
-                try {
-                    await obtenerTasaBCV();
+            try {
+                if (tipo === 'cliente') {
+                    const contratoId = document.getElementById('inputContrato').value.trim();
+                    if (!contratoId) throw new Error("Ingrese un contrato.");
+                    
                     const clienteDoc = await getDoc(doc(db, "clientes", contratoId));
-                    if (!clienteDoc.exists()) {
-                        document.getElementById('view-loader').style.display = 'none';
-                        document.getElementById('view-home').style.display = 'flex';
-                        alert("El contrato no existe.");
-                        return;
-                    }
-                    // Redirigir al panel del contrato del cliente
+                    if (!clienteDoc.exists()) throw new Error("Contrato no existe.");
+                    
                     window.location.href = `contrato.html?id=${contratoId}`;
-                } catch (error) {
-                    document.getElementById('view-loader').style.display = 'none';
-                    document.getElementById('view-home').style.display = 'flex';
-                    alert("Error de conexión: " + error.message);
-                }
-            } else {
-                const modoAdmin = document.getElementById('selectTipoAdmin').value;
-                if (modoAdmin === 'maestro') {
-                    const pass = document.getElementById('inputAdminPass').value;
-                    if (pass === "teo1212") {
-                        window.location.href = "admin.html";
-                    } else {
-                        alert("Contraseña incorrecta.");
-                    }
                 } else {
-                    const rifUser = document.getElementById('inputAlianzaRifUser').value.trim();
-                    const passAlianza = document.getElementById('inputAlianzaPass').value.trim();
-                    if (!rifUser || !passAlianza) { alert("Ingrese el RIF y contraseña."); return; }
+                    const modo = document.getElementById('selectTipoAdmin').value;
+                    if (modo === 'maestro') {
+                        if (document.getElementById('inputAdminPass').value === "teo1212") {
+                            window.location.href = "admin.html";
+                        } else throw new Error("Clave maestra incorrecta.");
+                    } else {
+                        const rif = document.getElementById('inputAlianzaRifUser').value.trim();
+                        const pass = document.getElementById('inputAlianzaPass').value.trim();
+                        if (!rif || !pass) throw new Error("Faltan credenciales.");
 
-                    try {
-                        const alianzaDoc = await getDoc(doc(db, "alianzas", rifUser));
-                        if (!alianzaDoc.exists()) { alert("La tienda aliada no existe."); return; }
-                        if (alianzaDoc.data().password === passAlianza) {
-                            window.location.href = `comercio.html?rif=${rifUser}`;
-                        } else {
-                            alert("Contraseña incorrecta.");
+                        const alianzaDoc = await getDoc(doc(db, "alianzas", rif));
+                        if (!alianzaDoc.exists() || alianzaDoc.data().password !== pass) {
+                            throw new Error("Credenciales de alianza incorrectas.");
                         }
-                    } catch (e) { alert("Error: " + e.message); }
+                        window.location.href = `comercio.html?rif=${rif}`;
+                    }
                 }
+            } catch (error) {
+                document.getElementById('view-loader').style.display = 'none';
+                document.getElementById('view-home').style.display = 'flex';
+                alert(error.message);
             }
         };
     </script>
-    <script>
-        function toggleNotifications() { document.getElementById('notificationsPanel').classList.toggle('open'); }
-        function marcarLeidas() { document.getElementById('notificationsPanel').classList.remove('open'); }
-    </script>
 </body>
 </html>
+
